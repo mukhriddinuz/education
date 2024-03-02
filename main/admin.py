@@ -13,6 +13,19 @@ class EmployeeAdmin(UserAdmin):
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
-        (_('Extra'), {'fields': ('phone_number', "slug",)}),
+        (_('Extra'), {'fields': ('phone_number', "extra_phone_number", "address", "birthday", "gender", "status", "balance", )}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+
+
+admin.site.register(Employee)
+admin.site.register(Student)
+admin.site.register(Course)
+admin.site.register(Room)
+admin.site.register(Days)
+admin.site.register(Groups)
+admin.site.register(Payment)
+admin.site.register(Attendance)
+admin.site.register(Homework)
+admin.site.register(Exam)
+admin.site.register(Notification)

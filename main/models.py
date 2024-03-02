@@ -2,10 +2,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
-from django.template.defaultfilters import slugify
-import qrcode
-from io import BytesIO
-from django.core.files import File
+from datetime import datetime, timedelta
+import datetime
+from dateutil.relativedelta import relativedelta
+
 
 
 class User(AbstractUser):
@@ -47,6 +47,7 @@ class User(AbstractUser):
 
 
 class Employee(models.Model):
+    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     user = models.OneToOneField(to=User, on_delete=models.CASCADE)
     salary = models.IntegerField(default=0)
     bio = models.TextField()
@@ -55,8 +56,19 @@ class Employee(models.Model):
     percentage = models.IntegerField(default=0)
 
     def clean(self):
-        if self.percentage <= 0 and self.percentage >= 100:
+        if self.percentage <= 0 or self.percentage >= 100:
             raise ValidationError("0 va 100 oralig'ida bo'lishi shart!")
+
+    def save(self, *args, **kwargs):
+        salary = 0
+        groups = Groups.objects.filter(teacher_id=self.id)
+        for group in groups:
+            salary += group.course.price * group.students.count()
+        self.salary = (self.percentage / 100) * salary
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.user.first_name
 
 
 class Student(models.Model):
@@ -83,6 +95,9 @@ class Student(models.Model):
     )
     status = models.IntegerField(default=0, choices=STATUS)
 
+    def __str__(self):
+        return self.user.first_name
+
 
 class Course(models.Model):
     name = models.CharField(max_length=155)
@@ -90,24 +105,32 @@ class Course(models.Model):
     price = models.IntegerField(default=0)
     info = models.TextField()
 
+    def __str__(self):
+        return self.name
+
 
 class Room(models.Model):
     name = models.CharField(max_length=150)
     capacity = models.IntegerField(default=0)
 
+    def __str__(self):
+        return self.name
+
 
 class Days(models.Model):
     day_name = models.CharField(max_length=50)
 
+    def __str__(self):
+        return self.day_name
+
 
 class Groups(models.Model):
-    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
+    id = models.AutoField(primary_key=True, unique=True)
     STATUS = (
         (0, "spare"),
         (1, "active"),
         (2, "archive"),
     )
-    status = models.IntegerField(default=0)
     name = models.CharField(max_length=150, null=True, blank=True)
     course = models.ForeignKey(to=Course, on_delete=models.CASCADE)
     teacher = models.ForeignKey(to=Employee, on_delete=models.PROTECT)
@@ -120,11 +143,36 @@ class Groups(models.Model):
     start_hour = models.TimeField() # dars boshlanish vaqti
     end_hour = models.TimeField() # dars tugash vaqti
     info = models.TextField(null=True, blank=True)
+    status = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def clean(self):
+        start_hour = datetime.datetime.strptime(str(self.start_hour), "%H:%M:%S")
+        end_hour = datetime.datetime.strptime(str(self.end_hour), "%H:%M:%S")
+        is_blank = Groups.objects.filter(room=self.room, start_hour__lte=start_hour, end_hour__gte=end_hour)
+        if is_blank and all(i.id != self.id for i in is_blank):
+            error_message = 'Bu xonada dars mavjud!\n'
+            for item in is_blank:
+                if item.id != self.id:
+                    error_message += f'{item}\n'
+            raise ValidationError(error_message)
 
     def save(self, *args, **kwargs):
-        if self.name is not None:
-            self.name = self.id
+        if self.name is None:
+            self.name = f"{self.id} - guruh"
+        if self.start_time and self.course.duration:
+            end_date = self.start_time + relativedelta(months=self.course.duration)
+            self.end_time = end_date
+        else:
+            raise ValueError("O'qitilgan oy belgilanmagan")
         super().save(*args, **kwargs)
+        teacher = self.teacher
+        teacher.save()
+
+
 
 
 class Payment(models.Model):
