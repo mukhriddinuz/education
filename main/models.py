@@ -211,4 +211,3 @@ class Notification(models.Model):
 
 
 
-
