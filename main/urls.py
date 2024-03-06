@@ -2,6 +2,7 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path('filter-user/', filter_user),
     path('filter-employee/', filter_employee),
     path('filter-student/', filter_student),
     path('filter-course/', filter_course),

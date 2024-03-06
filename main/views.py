@@ -34,7 +34,8 @@ def filter_user(request):
 
 @api_view(['GET'])
 def filter_employee(request):
-    id  = request.GET.get('id')
+    id = request.GET.get('id')
+    user = request.GET.get('user')
     salary = request.GET.get('salary')
     specialty = request.GET.get('specialty')
     percentage = request.GET.get('percentage')
@@ -44,6 +45,8 @@ def filter_employee(request):
     filters = {}
     if id is not None:
         filters['id'] = id
+    if user is not None:
+        filters['user'] = user
     if salary is not None:
         filters['salary'] = salary
     if specialty is not None:
@@ -66,10 +69,13 @@ def filter_employee(request):
 
 @api_view(['GET'])
 def filter_student(request):
+    user = request.GET.get('user')
     number = request.GET.get('number')
     extra_number = request.GET.get('extra_number')
     status = request.GET.get('status')
     filters = {}
+    if user is not None:
+        filters['user'] = user
     if number is not None:
         filters['number'] = number
     if extra_number is not None:
@@ -85,10 +91,13 @@ def filter_student(request):
 
 @api_view(['GET'])
 def filter_course(request):
+    id = request.GET.get('id')
     name = request.GET.get('name')
     duration = request.GET.get('duration')
     price = request.GET.get('price')
     filters = {}
+    if id is not None:
+        filters['id'] = id
     if name is not None:
         filters['name'] = name
     if duration is not None:
@@ -104,9 +113,12 @@ def filter_course(request):
 
 @api_view(['GET'])
 def filter_room(request):
+    id = request.GET.get('id')
     name = request.GET.get('name')
     capacity = request.GET.get('capacity')
     filters = {}
+    if id is not None:
+        filters['id'] = id
     if name is not None:
         filters['name'] = name
     if capacity is not None:
@@ -120,8 +132,14 @@ def filter_room(request):
 
 @api_view(['GET'])
 def filter_homework(request):
+    id = request.GET.get('id')
     group = request.GET.get('group')
-    homework = Homework.objects.filter(group=group)
+    filters = {}
+    if id is not None:
+        filters['id'] = id
+    if group is not None:
+        filters['group'] = group
+    homework = Homework.objects.filter(**filters)
     ser = HomeworkSerializers(homework, many=True)
     return Response(ser.data)
 
@@ -132,6 +150,7 @@ def filter_homework(request):
 
 @api_view(['GET'])
 def filter_groups(request):
+    id = request.GET.get('id')
     name = request.GET.get('name')
     course = request.GET.get('course')
     teacher = request.GET.get('teacher')
@@ -147,6 +166,8 @@ def filter_groups(request):
     status = request.GET.get('status')
     created_at = request.GET.get('created_at')
     filters = {}
+    if id is not None:
+        filters['id'] = id
     if name is not None:
         filters['name'] = name
     if course is not None:
@@ -175,7 +196,6 @@ def filter_groups(request):
         filters['status'] = status
     if created_at is not None:
         filters['created_at'] = created_at
-
     group = -Groups.objects.filter(**filters)
     ser = GroupsSerializers(group, many=True)
     return Response(ser.data)
@@ -185,10 +205,13 @@ def filter_groups(request):
 """Start Filter Payment"""
 @api_view(['GET'])
 def filter_payment(request):
+    id = request.GET.get('id')
     user = request.GET.get('user')
     amount = request.GET.get('amount')
     payment_date = request.GET.get('payment_date')
     filters = {}
+    if id is not None:
+        filters['id'] = id
     if user is not None:
         filters['user'] = user
     if amount is not None:
