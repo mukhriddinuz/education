@@ -125,7 +125,6 @@ class Days(models.Model):
 
 
 class Groups(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
     STATUS = (
         (0, "spare"),
         (1, "active"),
@@ -149,28 +148,13 @@ class Groups(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-    def clean(self):
-        start_hour = datetime.datetime.strptime(str(self.start_hour), "%H:%M:%S")
-        end_hour = datetime.datetime.strptime(str(self.end_hour), "%H:%M:%S")
-        is_blank = Groups.objects.filter(room=self.room, start_hour__lte=start_hour, end_hour__gte=end_hour)
-        if is_blank and all(i.id != self.id for i in is_blank):
-            error_message = 'Bu xonada dars mavjud!\n'
-            for item in is_blank:
-                if item.id != self.id:
-                    error_message += f'{item}\n'
-            raise ValidationError(error_message)
-
     def save(self, *args, **kwargs):
         if self.name is None:
-            self.name = f"{self.id} - guruh"
-        if self.start_time and self.course.duration:
-            end_date = self.start_time + relativedelta(months=self.course.duration)
-            self.end_time = end_date
-        else:
-            raise ValueError("O'qitilgan oy belgilanmagan")
-        super().save(*args, **kwargs)
+            self.name = f"{self.start_time} - guruh"
         teacher = self.teacher
         teacher.save()
+        super().save(*args, **kwargs)
+
 
 
 

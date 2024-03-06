@@ -1,4 +1,9 @@
 from django.shortcuts import render
+from rest_framework.response import Response
+from datetime import datetime, timedelta
+import datetime
+from dateutil.relativedelta import relativedelta
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, ListCreateAPIView, UpdateAPIView, DestroyAPIView
 from main.serializers import *
 from main.models import *
@@ -101,13 +106,119 @@ class DeleteDays(DestroyAPIView):
 class GetGroups(ListAPIView):
     queryset = Groups.objects.all()
     serializer_class = GroupsSerializers
-class CreateGroups(ListCreateAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = GroupsSerializers
+# class CreateGroups(ListCreateAPIView):
+#     queryset = Employee.objects.all()
+#     serializer_class = GroupsSerializers
 
-class UpdateGroups(UpdateAPIView):
-    queryset = Employee.objects.all()
-    serializer_class = GroupsSerializers
+
+@api_view(['POST'])
+def CreateGroup(request):
+    name = request.POST.get('name')
+    course = request.POST.get('course')
+    teacher = request.POST.get('teacher')
+    students = request.POST.getlist('students')
+    archive_students = request.POST.getlist('archive_students')
+    room = request.POST.get('room')
+    start_time = request.POST.get('start_time')
+    end_time = request.POST.get('end_time')
+    days = request.POST.getlist('days')
+    start_hour = request.POST.get('start_hour')
+    end_hour = request.POST.get('end_hour')
+    info = request.POST.get('info')
+    status = request.POST.get('status')
+
+    try:
+        course_id = int(course)
+        teacher_id = int(teacher)
+        room_id = int(room)
+        status = int(status)
+    except ValueError:
+        raise ValidationError("Invalid integer value for course, teacher, room, or status")
+
+    is_blank = Groups.objects.filter(room_id=room_id, start_hour__lte=start_hour, end_hour__gte=end_hour, days__in=days)
+    if is_blank.exists():
+        error_message = 'Bu xonada dars mavjud!\n'
+        for item in is_blank:
+            error_message += f'{item}\n'
+        raise ValidationError(error_message)
+    else:
+        group = Groups.objects.create(
+            name=name,
+            course_id=course_id,
+            teacher_id=teacher_id,
+            room_id=room_id,
+            start_time=start_time,
+            end_time=end_time,
+            start_hour=start_hour,
+            end_hour=end_hour,
+            info=info,
+            status=status,
+        )
+        group.students.add(*students)
+        group.archive_students.add(*archive_students)
+        group.days.add(*days)
+
+        ser = GroupsSerializers(group)
+        return Response(ser.data)
+
+
+# class UpdateGroups(UpdateAPIView):
+#     queryset = Employee.objects.all()
+#     serializer_class = GroupsSerializers
+
+
+@api_view(['PUT'])
+def UpdateGroup(request, pk):
+    name = request.POST.get('name')
+    course = request.POST.get('course')
+    teacher = request.POST.get('teacher')
+    students = request.POST.getlist('students')
+    archive_students = request.POST.getlist('archive_students')
+    room = request.POST.get('room')
+    start_time = request.POST.get('start_time')
+    end_time = request.POST.get('end_time')
+    days = request.POST.getlist('days')
+    start_hour = request.POST.get('start_hour')
+    end_hour = request.POST.get('end_hour')
+    info = request.POST.get('info')
+    status = request.POST.get('status')
+
+    try:
+        course_id = int(course)
+        teacher_id = int(teacher)
+        room_id = int(room)
+        status = int(status)
+    except ValueError:
+        raise ValidationError("Invalid integer value for course, teacher, room, or status")
+
+    is_blank = Groups.objects.filter(room_id=room_id, start_hour__lte=start_hour, end_hour__gte=end_hour, days__in=days)
+    if is_blank.exists() and all(i.id != pk for i in is_blank):
+        error_message = 'Bu xonada dars mavjud!\n'
+        for item in is_blank:
+            error_message += f'{item}\n'
+        raise ValidationError(error_message)
+    else:
+        group = Groups.objects.get(pk=pk)
+        group.name = name if name else group.name
+        group.course_id = course_id if course_id else group.course_id
+        group.teacher_id = teacher_id if teacher_id else group.teacher_id
+        group.room_id = room_id if room_id else group.room_id
+        group.start_time = start_time if start_time else group.start_time
+        group.end_time = end_time if end_time else group.end_time
+        group.start_hour = start_hour if start_hour else group.start_hour
+        group.end_hour = end_hour if end_hour else group.end_hour
+        group.info = info if info else group.info
+        group.status = status if status else group.status
+
+        group.save()
+
+        group.students.add(*students)
+        group.archive_students.add(*archive_students)
+        group.days.add(*days)
+
+        ser = GroupsSerializers(group)
+        return Response(ser.data)
+
 
 class DeleteGroups(DestroyAPIView):
     queryset = Employee.objects.all()

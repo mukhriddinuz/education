@@ -34,8 +34,8 @@ urlpatterns = [
 
     # CRUD for Groups
     path('groups/', GetGroups.as_view(), name='get_groups'),
-    path('groups/create/', CreateGroups.as_view(), name='create_groups'),
-    path('groups/update/<int:pk>/', UpdateGroups.as_view(), name='update_groups'),
+    path('groups/create/', CreateGroup, name='create_groups'),
+    path('groups/update/<int:pk>/', UpdateGroup, name='update_groups'),
     path('groups/delete/<int:pk>/', DeleteGroups.as_view(), name='delete_groups'),
 
     # CRUD for Payment
