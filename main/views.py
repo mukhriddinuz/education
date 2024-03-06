@@ -3,6 +3,32 @@ from rest_framework.response import Response
 from .models import *
 from .serializers import *
 
+""" Start Filter User"""
+@api_view(['GET'])
+def filter_user(request):
+    phone_number = request.GET.get('phone_number')
+    address = request.GET.get('address')
+    birthday = request.GET.get('birthday')
+    gender = request.GET.get('gender')
+    status = request.GET.get('status')
+    balance = request.GET.get('balance')
+    filters = {}
+    if phone_number is not None:
+        filters['phone_number'] = phone_number
+    if address is not None:
+        filters['address'] = address
+    if birthday is not None:
+        filters['birthday'] = birthday
+    if gender is not None:
+        filters['gender'] = gender
+    if status is not None:
+        filters['status'] = status
+    if balance is not None:
+        filters['balance'] = balance
+    user = User.objects.filter(**filters)
+    ser = UserSerializers(user, many=True)
+""" Enb Filter User"""
+
 """ Start  Filter Employee """
 
 
